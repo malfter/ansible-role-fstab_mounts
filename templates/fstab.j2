@@ -1,0 +1,49 @@
+################################################################################
+#>> This file is managed by Ansible - changes made here will be overwritten. <<#
+################################################################################
+#
+# {{ fstab_path }}: static file system information.
+#
+# Use 'blkid' to print the universally unique identifier for a
+# device; this may be used with UUID= as a more robust way to name devices
+# that works even if disks are added and removed. See fstab(5).
+#
+# <file system> <mount point>   <type>  <options>       <dump>  <pass>
+
+###### Core mount points necessary for the system to boot
+{% for drive in drives_boot %}
+UUID={{ drive.uuid }} {{ drive.mount_point }} {{ drive.type }} {{ drive.options }} {{ drive.dump }} {{ drive.pass }}
+{% endfor %}
+
+{% if cryptdisks_mount is defined %}
+###### Important mountpoint necessary for unlocking any encrypted drives
+{% if cryptdisks_mount.uuid is defined %}
+UUID={{ cryptdisks_mount.uuid }} {{ cryptdisks_mount.mount_point }} {{ cryptdisks_mount.type }} {{ cryptdisks_mount.options | default('defaults,nofail') }} {{ cryptdisks_mount.dump | default('0') }} {{ cryptdisks_mount.pass | default('2') }}
+{% elif cryptdisks_mount.net_path is defined %}
+{{ cryptdisks_mount.net_path }} {{ cryptdisks_mount.mount_point }} {{ cryptdisks_mount.type }} {% if cryptdisks_mount.net_credentials.path is defined %}credentials={{ cryptdisks_mount.net_credentials.path }},{% endif %}{{ cryptdisks_mount.options | default('_netdev,nofail') }} {{ cryptdisks_mount.dump | default('0') }} {{ cryptdisks_mount.pass | default('0') }}
+{% endif %}
+{% endif %}
+
+{% if drives_normal is defined and drives_normal|length > 0 %}
+###### Additional normal drives
+{% for drive in drives_normal %}
+{% if drive.comment is defined %}# {{ dive.comment }}{% endif %}
+UUID={{ drive.uuid }} {{ drive.mount_point }} {{ drive.type | default('ext4') }} {{ drive.options | default('defaults,nofail') }} {{ drive.dump | default('0') }} {{ drive.pass | default('2') }}
+{% endfor %}
+{% endif %}
+
+{% if drives_encrypted is defined and drives_encrypted|length > 0 %}
+###### Additional encrypted drives
+{% for drive in drives_encrypted %}
+{% if drive.fstab.comment is defined %}# {{ dive.fstab.comment }}{% endif %}
+/dev/mapper/{{ drive.label }} {{ drive.mount_point }} {{ drive.fstab.type | default('ext4') }} {{ drive.fstab.options | default('defaults,nofail') }} {{ drive.fstab.dump | default('0') }} {{ drive.fstab.pass | default('2') }}
+{% endfor %}
+{% endif %}
+
+{% if drives_pooled is defined and drives_pooled|length > 0 %}
+###### Drive pools
+{% for pool in drives_pooled %}
+{% if pool.comment is defined %}# {{ pool.comment }}{% endif %}
+{{ pool.branches|join(':') }} {{ pool.mount_point }} fuse.mergerfs {% if pool.name is defined and pool.name != '' %}fsname={{ pool.name }},{% endif %}{{ pool.options | default('defaults,allow_other,use_ino') }} {{ pool.dump | default('0') }} {{ pool.pass | default('0') }}
+{% endfor %}
+{% endif %}

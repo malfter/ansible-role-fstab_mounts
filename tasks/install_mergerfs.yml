@@ -1,0 +1,25 @@
+---
+- name: Download 'mergerfs' installation package
+  get_url:
+    url: "https://github.com/trapexit/mergerfs/releases/download/{{ mergerfs_version }}/mergerfs_{{ mergerfs_version }}.{{ ansible_distribution|lower }}-{{ ansible_distribution_release }}_amd64.deb"
+    dest: "{{ mergefs_tmp_dir }}/mergerfs_{{ mergerfs_version }}.{{ ansible_distribution|lower }}-{{ ansible_distribution_release }}_amd64.deb"
+    timeout: 30
+
+- name: Install 'mergerfs'
+  become: true
+  apt:
+    deb: "{{ mergefs_tmp_dir }}/mergerfs_{{ mergerfs_version }}.{{ ansible_distribution|lower }}-{{ ansible_distribution_release }}_amd64.deb"
+
+- name: Get infromation about the newly installed version of mergerfs
+  become: true
+  shell: "mergerfs --version | sed -rn 's/mergerfs version: ([0-9]+\\.[0-9]+\\.[0-9]+)$/\\1/p'"
+  register: mergerfs_installed_version
+
+- fail:
+    msg: "mergerfs is reporting '{{ mergerfs_installed_version.stdout }}' as the installed version instead of the requested '{{ mergerfs_version }}'"
+  when: mergerfs_installed_version.stdout is not version(mergerfs_version, '==')
+
+- name: Remove .deb file
+  file:
+    path: "{{ mergefs_tmp_dir }}/mergerfs_{{ mergerfs_version }}.{{ ansible_distribution|lower }}-{{ ansible_distribution_release }}_amd64.deb"
+    state: absent

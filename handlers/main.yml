@@ -1,0 +1,21 @@
+---
+- name: Unlock encrypted drives
+  become: true
+  shell: "cryptdisks_start {{ item.label }}"
+  with_items: "{{ drives_encrypted }}"
+  register: unlock_drives
+  ignore_errors: true
+
+- fail:
+    msg: "{{ item.stderr }}"
+  when: >
+    (item.rc != 0)
+    and not
+    ("already mapped or mounted" in item.stderr_lines|last)
+  with_items: "{{ unlock_drives.results }}"
+
+- name: Mount drives
+  become: true
+  args:
+    warn: false
+  shell: mount -a

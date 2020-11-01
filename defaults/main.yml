@@ -1,0 +1,5 @@
+---
+fstab_path: "/etc/fstab"
+cryptdisks_path: "/etc/default/cryptdisks"
+crypttab_path: "/etc/crypttab"
+mergefs_tmp_dir: "/tmp"
