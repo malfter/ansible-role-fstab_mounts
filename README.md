@@ -76,7 +76,6 @@ section, otherwise just continue reading.
 - [Encrypted Drives](#encrypted-drives)
   - [The `cryptdisks` Mount](#the-cryptdisks-mount)
 - [Pooled Drives](#pooled-drives)
-  - [Install `mergerfs`](#install-mergerfs)
 
 > NOTE: Some extra information about Ansible variables may be found
         [here](#ansible-variables-location).
@@ -162,7 +161,7 @@ This role can also handle mounting encrypted partitions/drives as well. The
 configuration options are a bit different from the previous
 ["normal" drives](#normal-drives), and this is because the devices will first
 have to be "unlocked" by [`cryptsetup`][10] before it can be mounted as usual
-([simple visualization](#mount-it)).
+([simple visualization](#mount-it-1)).
 
 Here are the options for encrypted drives, where the defaults are entered and
 any field which is not marked with `# Required` may be left out of your
