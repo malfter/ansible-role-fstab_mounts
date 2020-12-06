@@ -3,22 +3,22 @@
 This Ansible role was created by me in order to easier manage a couple of
 different programs who all need to create entries in `/etc/fstab` in a specific
 order, and are therefore somewhat dependent on each other. This role can create
-the following types of mounts:
+the following types of `fstab` mount entries:
 
-- Boot drives
-- Normal drives
-- Encrypted drives
+- Boot mounts
+- Normal mounts
+- Encrypted mounts
   - With options for loading the decryption keys from a remote host.
-- Pooled drives (using [mergerfs][1] for pooling).
+- Pooled mounts (using [mergerfs][1] for pooling).
 
 
 ### Important Note
 This Ansible role is not really "automatic", since it is necessary to perform
 a few manual steps before this role can be run (like creating a filesystem on
-the drives). So this is designed more as a method of "record keeping" which
-drives that are present on each system, and where they are mounted. By version
-managing your configs you can easily track the hardware changes made to your
-systems.
+the drives which are to be mounted). So this is designed more as a method of
+"record keeping" which drives that are present on each system, and where they
+are mounted. By version managing your configs you can easily track the hardware
+changes made to your systems.
 
 At the end of this README there are some guides for the manual steps that are
 necessary, so you may know what is going on at a more detailed level.
@@ -31,7 +31,7 @@ This repository does not have any dependencies by itself, so just move into
 your `roles/` folder and run the following:
 
 ```bash
-git clone git@github.com:JonasAlfredsson/ansible-role-drive_mounts.git drive_mounts
+git clone git@github.com:JonasAlfredsson/ansible-role-fstab_mounts.git fstab_mounts
 ```
 
 If you would like to download any updates for this role in the future, you may
@@ -46,9 +46,9 @@ main playbook like this:
 
 ```yaml
 - hosts: all
-  name: Configure all drive mounts
+  name: Configure all fstab mounts
   roles:
-    - drive_mounts
+    - fstab_mounts
 ```
 
 
@@ -58,7 +58,7 @@ main playbook like this:
 There are four "types" of mounts which can be managed with this role, and they
 will all have their own section that explains how to properly configure them.
 However, the only section that is required to be completed is the
-"[boot drives](#boot-drives)" one, since otherwise you may end up in a state
+"[boot mounts](#boot-mounts)" one, since otherwise you may end up in a state
 where the computer won't be able to boot properly.
 
 Furthermore, as stated in the introduction, this role requires you to manually
@@ -71,19 +71,20 @@ section.
 If you know what you are looking for you can jump directly the the desired
 section, otherwise just continue reading.
 
-- [Boot Drives](#boot-drives)
-- [Normal Drives](#normal-drives)
-- [Encrypted Drives](#encrypted-drives)
+- [Boot Mounts](#boot-mounts)
+- [Normal Mounts](#normal-mounts)
+- [Encrypted Mounts](#encrypted-mounts)
   - [The `cryptdisks` Mount](#the-cryptdisks-mount)
-- [Pooled Drives](#pooled-drives)
+- [Pooled Mounts](#pooled-mounts)
 
 > NOTE: Some extra information about Ansible variables may be found
         [here](#ansible-variables-location).
 
 
-## Boot Drives
+## Boot Mounts
+
 Before doing anything else to the system you are trying to apply this role to
-we need to define the `drives_boot` variable. SSH to the destination server and
+we need to define the `mounts_boot` variable. SSH to the destination server and
 type the following:
 
 ```bash
@@ -105,7 +106,7 @@ This means we need to create the following Ansible variable before creating
 entries for any other mounts (the order is important here):
 
 ```yaml
-drives_boot:
+mounts_boot:
   - uuid: "88f0236b-620a-456e-a4a6-1b5c84996b5c"
     mount_point: "/"
     type: "ext4"
@@ -121,24 +122,25 @@ drives_boot:
 ```
 
 This is the minimal configuration necessary in order to use this role, and here
-all the individual variables needs to be explicitly set. The drives defined here
+all the individual variables needs to be explicitly set. The mounts defined here
 are also placed in the top of the `fstab` file, in order to be mounted first.
 
 > If your `fstab` file is located somewhere else you can also define the
-  `fstab_path` variable to point to the correct location. Look in the
+  `mounts_fstab_path` variable to point to the correct location. Look in the
   [`defaults/main.yml`](./defaults/main.yml) file for more "global" variables.
 
 
-## Normal Drives
-After you have added any "boot" drives, you may then add additional "normal"
-drives to `fstab`. The procedure is very similar to the previous
-"[Boot Drives](#boot-drives)" step, except there are now some default values
+## Normal Mounts
+
+After you have added any "boot" mounts, you may then add additional "normal"
+mounts to `fstab`. The procedure is very similar to the previous
+"[Boot Mounts](#boot-mounts)" step, except there are now some default values
 present, which means you can write a more compact list if you want. Any field
 that is not marked with `# Required` may be left out of your configuration if
 you are fine with the defaults.
 
 ```yaml
-drives_normal:
+mounts_normal:
   - uuid:  # Required
     mount_point:  # Required
     type: "ext4"
@@ -150,20 +152,19 @@ drives_normal:
 
 > Help for obtaining the UUID may be found [here](#obtain-the-uuid).
 
-These drives are in the third place in the `fstab` file, after the
-[boot drives](#boot-drives) and the [cryptdisks mount](#the-cryptdisks-mount).
+These mounts are in the third place in the `fstab` file, after the
+[boot mounts](#boot-mounts) and the [cryptdisks mount](#the-cryptdisks-mount).
 
 
-## Encrypted Drives
-
+## Encrypted Mounts
 
 This role can also handle mounting encrypted partitions/drives as well. The
 configuration options are a bit different from the previous
-["normal" drives](#normal-drives), and this is because the devices will first
+["normal" mounts](#normal-mounts), and this is because the devices will first
 have to be "unlocked" by [`cryptsetup`][10] before it can be mounted as usual
 ([simple visualization](#mount-it-1)).
 
-Here are the options for encrypted drives, where the defaults are entered and
+Here are the options for encrypted mounts, where the defaults are entered and
 any field which is not marked with `# Required` may be left out of your
 configuration if you are fine with the defaults.
 
@@ -171,7 +172,7 @@ configuration if you are fine with the defaults.
              the UUID.
 
 ```yaml
-drives_encrypted:
+mounts_encrypted:
   - label:  # Required
     uuid:  # Required
     mount_point:  # Required
@@ -189,19 +190,18 @@ drives_encrypted:
 
 > Help for obtaining the UUID may be found [here](#obtain-the-uuid)
 
-These drives are in the fourth place in the `fstab` file, after the
+These mounts are in the fourth place in the `fstab` file, after the
 the [cryptdisks mount](#the-cryptdisks-mount) and the
-["normal" drives](#normal-drives).
+["normal" mounts](#normal-mounts).
 
 ### The Cryptdisks Mount
-
-If the `key_file` (in the settings above) is located on a USB key or network
+If the `key_file`(s), in the settings above, is located on a USB key or network
 drive, which needs to be mounted **before** anything else can be mounted, you
 will have to specify the `CRYPTDISKS_MOUNT` within the `/etc/default/cryptdisks`
 file. This can be done by just writing this:
 
 ```yaml
-cryptdisks_mount:
+mounts_cryptdisks:
   mount_point: "/mnt/usb/drive"
   uuid: "37033980-8380-476d-a851-840815c328b1"
   type: "ext4"
@@ -213,7 +213,7 @@ cryptdisks_mount:
 or if it is on a Samba network drive which needs credentials:
 
 ```yaml
-cryptdisks_mount:
+mounts_cryptdisks:
   mount_point: "/mnt/network/drive"
   net_path: "//192.168.0.1/secret_keys"
   net_credentials:
@@ -226,22 +226,26 @@ cryptdisks_mount:
   pass: 0
 ```
 
-This mount point is quite important, so it is in the second place in the
-`fstab` file, right after the [boot drives](#boot-drives).
+Because of the importance of this mount point it is located in the second place
+in the `fstab` file, right after the [boot mounts](#boot-mounts).
 
 
-## Pooled Drives
+## Pooled Mounts
+
 "Pooling" drives means that you make multiple separate disks look like a single
 one for the computer. Important to know that "pooling" is **not** RAID, since
 this method basically only places single whole files on the different drives
-available in the pool.
+available in the pool with no redundancy.
+
+> Take a look at my [SnapRAID role][21] if you are interested in adding some
+  data redundancy to pooled drives.
 
 The program making this possible is [`mergerfs`][1], and first of all you will
 need to define which version of it you want to be installed. Choose one from
 the list [here][17], and define it like this:
 
 ```yaml
-mergerfs_version: "2.29.0"
+mounts_mergerfs_version: "2.29.0"
 ```
 
 There are a ton of [options][18] available for `mergerfs`, so I suggest you
@@ -251,7 +255,7 @@ with `# Required` may be left out of your configuration if you are fine with
 the defaults.
 
 ```yaml
-drives_pooled:
+mounts_pooled:
   - name: ""
     options: "defaults,allow_other,use_ino"
     dump: 0
@@ -261,12 +265,12 @@ drives_pooled:
 ```
 
 The `branches` variable is a list of strings that correspond to mount points
-that have been defined in either the [normal](#normal-drives) or the
-[encrypted](#encrypted-drives) drives sections.
+that have been defined in either the [normal](#normal-mounts) or the
+[encrypted](#encrypted-mounts) mounts sections.
 
 #### Example:
 ```yaml
-drives_pooled:
+mounts_pooled:
   - name: "first_pool"
     mount_point: "/mnt/pool"
     branches:
@@ -275,8 +279,8 @@ drives_pooled:
       - "/mnt/disk3"
 ```
 
-These entries are located at the end of the `fstab` file, so that it is possible
-to add any of the previous types of mounts to a pool.
+These entries are located at the very end of the `fstab` file, so that it is
+possible to add any of the previous types of mounts to a pool.
 
 
 
@@ -388,7 +392,7 @@ bog standard method of doing it for the first partition.
 sudo mkfs.ext4 /dev/sdX1
 ```
 
-But for the second partition we don't want to [reserve][20] any of the space to
+But for the second partition we don't want to [reserve][20] any of the space for
 the super user, and we also want to reduce the number of [inodes][19] to only 1
 per 4MiB.
 
@@ -415,8 +419,8 @@ Try going into the desired mount point and create a file, just to be certain
 everything works as intended.
 
 
-
 ## Create Encrypted Drive
+
 You can either target a raw drive, and make it use all the space just like a
 single big encrypted partition, or you can target an already existing partition
 (that was formed according to the steps in
@@ -465,7 +469,7 @@ or we can encrypt an already existing partition
 sudo cryptsetup luksFormat -v -y --key-file=/path/to/first-drive.key /dev/sdX2
 ```
 
-Both of these operastions are of course destructive, so any existing data on
+Both of these operations are of course destructive, so any existing data on
 the drive/partition will be lost.
 
 ### Unlock Encrypted Device
@@ -532,6 +536,7 @@ you are not in the process of creating normal/encrypted drives.
 
 
 ## Obtain the UUID
+
 In order to obtain the UUID ([universally unique identifier][16]) for the drives
 connected to your system you can simply use the following command, which will
 list all available/mountable devices:
@@ -580,7 +585,7 @@ get a good experience with encrypted drives.
 If you have a new drive, or are re-purposing an old un-encrypted drive, you may
 want to format it in such a way that the entire drive is filled with random
 data. This is an important step if you are trying to achieve
-"[plausible deniability][14]" for you encrypted drives, but should probably be
+"[plausible deniability][14]" for your encrypted drives, but should probably be
 done anyways since it will erase any traces of old data that was there before.
 
 The following command expects you to have completed the
@@ -597,14 +602,15 @@ sudo dd if=/dev/zero of=/dev/mapper/first-drive bs=4M status=progress
 Even if the input stream of the `dd` command is just zeroes, the encryption
 algorithm will produce encrypted (i.e. it looks random) data that is written to
 the drive. It is also possible to achieve the same result with the following
-command (notice we target the device and not the decrypted mount point now):
+command (notice we target the actual device and not the decrypted mount point
+now):
 
 ```bash
 sudo dd if=/dev/urandom of=/dev/sdX bs=4M status=progress
 ```
 
-However, this is usually slower than just spewing zeroes through the hardware
-accelerated encryption algorithm.
+However, this is usually slower than just spewing zeroes through the
+[hardware accelerated](#test-for-hardware-acceleration) encryption algorithm.
 
 If you are trying to create an encrypted drive you should now start that guide
 over again from the [beginning](#create-encrypted-drive), so you get a
@@ -621,7 +627,7 @@ host. This way it is easy to separate the information on a host by host basis,
 without creating any conflicts between them.
 
 An important thing to remember is that Ansible will overwrite, and not merge,
-hashes/dictionaries (like `drives_boot` or `drives_normal`) if there are two
+hashes/dictionaries (like `mounts_boot` or `mounts_normal`) if there are two
 with the same name. You can therefore not have a part of them be defined in the
 `group_vars/` and then other parts in the `host_vars/`. If you do not like this
 behavior you may look into setting [`hash_behaviour = merge`][2], but be aware
@@ -650,3 +656,4 @@ into the [`combine`][5] filter or the [`merge_vars`][4] action plugin.
 [18]: https://github.com/trapexit/mergerfs/#options
 [19]: https://www.howtogeek.com/465350/everything-you-ever-wanted-to-know-about-inodes-on-linux/
 [20]: https://unix.stackexchange.com/a/7965
+[21]: https://github.com/JonasAlfredsson/ansible-role-snapraid

@@ -1,7 +1,7 @@
 ---
 - fail:
-    msg: You may only define one of 'cryptdisks_mount.uuid' or 'cryptdisks_mount.net_path'
-  when: cryptdisks_mount.uuid is defined and cryptdisks_mount.net_path is defined
+    msg: You may only define one of 'mounts_cryptdisks.uuid' or 'mounts_cryptdisks.net_path'
+  when: mounts_cryptdisks.uuid is defined and mounts_cryptdisks.net_path is defined
 
 - name: Create folder for the cryptdisks mount point
   become: true
@@ -10,21 +10,21 @@
     owner: root
     group: root
     mode: '0700'
-    path: "{{ cryptdisks_mount.mount_point }}"
+    path: "{{ mounts_cryptdisks.mount_point }}"
 
-- name: "Configure `CRYPTDISKS_MOUNT` in '{{ cryptdisks_path }}'"
+- name: "Configure `CRYPTDISKS_MOUNT` in '{{ mounts_cryptdisks_path }}'"
   become: true
   lineinfile:
-    path: "{{ cryptdisks_path }}"
+    path: "{{ mounts_cryptdisks_path }}"
     regexp: '^CRYPTDISKS_MOUNT=.+'
-    line: "CRYPTDISKS_MOUNT=\"{{ cryptdisks_mount.mount_point | default('') }}\""
+    line: "CRYPTDISKS_MOUNT=\"{{ mounts_cryptdisks.mount_point | default('') }}\""
 
 - name: Push out the credentials file
   become: true
   template:
     src: smbcredentials.j2
-    dest: "{{ cryptdisks_mount.net_credentials.path }}"
+    dest: "{{ mounts_cryptdisks.net_credentials.path }}"
     owner: root
     group: root
     mode: '0600'
-  when: cryptdisks_mount.net_credentials.path is defined
+  when: mounts_cryptdisks.net_credentials.path is defined

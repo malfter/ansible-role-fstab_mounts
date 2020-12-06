@@ -11,12 +11,12 @@
 - name: Verify that the requested version of mergerfs is newer than the one installed
   block:
     - fail:
-        msg: "The installed version of mergerfs ({{ mergerfs_current_version.stdout }}) is newer than the requested version ({{ mergerfs_version }})"
-      when: mergerfs_current_version.stdout is version(mergerfs_version, '>')
+        msg: "The installed version of mergerfs ({{ mergerfs_current_version.stdout }}) is newer than the requested version ({{ mounts_mergerfs_version }})"
+      when: mergerfs_current_version.stdout is version(mounts_mergerfs_version, '>')
 
     - name: Install new version of mergerfs
       include: install_mergerfs.yml
-      when: mergerfs_current_version.stdout is version(mergerfs_version, '<')
+      when: mergerfs_current_version.stdout is version(mounts_mergerfs_version, '<')
   when: mergerfs_current_version.stdout != ''
 
 - name: Install mergerfs

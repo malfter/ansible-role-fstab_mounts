@@ -2,11 +2,12 @@
 - name: Unlock encrypted drives
   become: true
   shell: "cryptdisks_start {{ item.label }}"
-  with_items: "{{ drives_encrypted }}"
+  with_items: "{{ mounts_encrypted }}"
   register: unlock_drives
   ignore_errors: true
 
-- fail:
+- name: Verify all encrypted drives could be unlocked
+  fail:
     msg: "{{ item.stderr }}"
   when: >
     (item.rc != 0)

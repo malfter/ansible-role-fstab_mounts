@@ -2,14 +2,14 @@
 #>> This file is managed by Ansible - changes made here will be overwritten. <<#
 ################################################################################
 #
-# {{ crypttab_path }}: encrypted file system information.
+# {{ mounts_crypttab_path }}: encrypted file system information.
 #
 # <target name>	<source device>		<key file>	<options>
 
-{% if drives_encrypted is defined %}
+{% if mounts_encrypted is defined %}
 ###### Encrypted drives and their un-encrypted mount points
-{% for drive in drives_encrypted %}
-{% if drive.crypttab.comment is defined %}# {{ dive.crypttab.comment }}{% endif %}
-{{ drive.label }} /dev/disk/by-uuid/{{ drive.uuid }} {{ drive.crypttab.key_file }} {{ drive.crypttab.options | default('luks,nofail') }}
+{% for mount in mounts_encrypted %}
+{% if mount.crypttab.comment is defined %}# {{ mount.crypttab.comment }}{% endif %}
+{{ mount.label }} /dev/disk/by-uuid/{{ mount.uuid }} {{ mount.crypttab.key_file }} {{ mount.crypttab.options | default('luks,nofail') }}
 {% endfor %}
 {% endif %}

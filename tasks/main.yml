@@ -1,28 +1,28 @@
 ---
 - fail:
     msg: "You must define all the boot drives manually"
-  when: drives_boot is not defined or drives_boot|length == 0
+  when: mounts_boot is not defined or mounts_boot|length == 0
 
 - name: Install 'cifs-utils' if network drives are present
   include: install_package.yml package=cifs-utils
-  when: drives_network is defined or cryptdisks_mount.net_path is defined
+  when: mounts_network is defined or mounts_cryptdisks.net_path is defined
 
 - name: Install 'cryptsetup' if encrypted drives are present
   include: install_package.yml package=cryptsetup
-  when: drives_encrypted is defined or cryptdisks_mount is defined
+  when: mounts_encrypted is defined or mounts_cryptdisks is defined
 
 - name: Install 'mergerfs' if pooled drives are present
   include: configure_mergerfs.yml
-  when: drives_pooled is defined
+  when: mounts_pooled is defined
 
 - name: Enable a specific mount point that is necessary in order to unlock encrypted drives
   include: cryptdisks_mount.yml
-  when: cryptdisks_mount is defined
+  when: mounts_cryptdisks is defined
 
 - name: Push out the 'fstab' file
   become: true
   template:
-    dest: "{{ fstab_path }}"
+    dest: "{{ mounts_fstab_path }}"
     src: fstab.j2
   notify:
     - Mount drives
@@ -30,9 +30,9 @@
 - name: Push out the 'crypttab' file
   become: true
   template:
-    dest: "{{ crypttab_path }}"
+    dest: "{{ mounts_crypttab_path }}"
     src: crypttab.j2
   notify:
     - Unlock encrypted drives
     - Mount drives
-  when: drives_encrypted is defined
+  when: mounts_encrypted is defined
