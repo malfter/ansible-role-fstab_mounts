@@ -1,4 +1,4 @@
-# ansible-role-drive_mounts
+# ansible-role-fstab_mounts
 
 This Ansible role was created by me in order to easier manage a couple of
 different programs who all need to create entries in `/etc/fstab` in a specific
