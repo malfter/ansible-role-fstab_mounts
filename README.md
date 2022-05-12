@@ -1,9 +1,9 @@
 # ansible-role-fstab_mounts
 
 This Ansible role was created by me in order to easier manage a couple of
-different programs who all need to create entries in `/etc/fstab` in a specific
-order, and are therefore somewhat dependent on each other. This role can create
-the following types of `fstab` mount entries:
+different programs who all need to create entries in `/etc/fstab`, and are
+therefore somewhat dependent on each other. This role can create the following
+types of `fstab` mount entries:
 
 - Boot mounts
 - Normal mounts
@@ -14,8 +14,8 @@ the following types of `fstab` mount entries:
 
 ### Important Note
 This Ansible role is not really "automatic", since it is necessary to perform
-a few manual steps before this role can be run (like creating a filesystem on
-the drives which are to be mounted). So this is designed more as a method of
+a lot of manual steps before this role can be run (like creating a filesystem
+on the drives which are to be mounted). So this is designed more as a method of
 "record keeping" which drives that are present on each system, and where they
 are mounted. By version managing your configs you can easily track the hardware
 changes made to your systems.
@@ -103,7 +103,7 @@ UUID=b8d210eb-d186-405f-bc42-a55cbe069a27  none        swap   sw                
 ```
 
 This means we need to create the following Ansible variable before creating
-entries for any other mounts (the order is important here):
+entries for any other mounts:
 
 ```yaml
 mounts_boot:
@@ -122,8 +122,7 @@ mounts_boot:
 ```
 
 This is the minimal configuration necessary in order to use this role, and here
-all the individual variables needs to be explicitly set. The mounts defined here
-are also placed in the top of the `fstab` file, in order to be mounted first.
+all the individual variables needs to be explicitly set.
 
 > If your `fstab` file is located somewhere else you can also define the
   `mounts_fstab_path` variable to point to the correct location. Look in the
@@ -151,9 +150,6 @@ mounts_normal:
 ```
 
 > Help for obtaining the UUID may be found [here](#obtain-the-uuid).
-
-These mounts are in the third place in the `fstab` file, after the
-[boot mounts](#boot-mounts) and the [cryptdisks mount](#the-cryptdisks-mount).
 
 
 ## Encrypted Mounts
@@ -188,12 +184,6 @@ mounts_encrypted:
       comment: ""
 ```
 
-> Help for obtaining the UUID may be found [here](#obtain-the-uuid)
-
-These mounts are in the fourth place in the `fstab` file, after the
-the [cryptdisks mount](#the-cryptdisks-mount) and the
-["normal" mounts](#normal-mounts).
-
 ### The Cryptdisks Mount
 If the `key_file`(s), in the settings above, is located on a USB key or network
 drive, which needs to be mounted **before** anything else can be mounted, you
@@ -225,9 +215,6 @@ mounts_cryptdisks:
   dump: 0
   pass: 0
 ```
-
-Because of the importance of this mount point it is located in the second place
-in the `fstab` file, right after the [boot mounts](#boot-mounts).
 
 
 ## Pooled Mounts
@@ -278,9 +265,6 @@ mounts_pooled:
       - "/mnt/disk2"
       - "/mnt/disk3"
 ```
-
-These entries are located at the very end of the `fstab` file, so that it is
-possible to add any of the previous types of mounts to a pool.
 
 
 
@@ -333,7 +317,7 @@ here will be preceded by "`(parted)`" to indicate that we are still there.
 
 ### Create Partition Table
 A drive needs a partition table before any partitions can be made. This will
-only have to be done once per drive, irregardless how many partitions you intend
+only have to be done once per drive, regardless how many partitions you intend
 to have on the drive later.
 
 Unless you intend to install the drive in a computer that is >15 years old you
@@ -592,7 +576,7 @@ The following command expects you to have completed the
 [Create Encrypted Drive](#create-encrypted-drive) guide until the point where
 this section is mentioned in the
 [Unlock Encrypted Device](#unlock-encrypted-device) sub-section. Because
-when the drive/partition has been unlocked, and it exists under `dev/mapper/`,
+when the drive/partition has been unlocked, and it exists under `/dev/mapper/`,
 you should run the following command to fill it with random data.
 
 ```bash
@@ -633,6 +617,9 @@ with the same name. You can therefore not have a part of them be defined in the
 behavior you may look into setting [`hash_behaviour = merge`][2], but be aware
 that this is not a very [good solution][3]. Instead you should probably look
 into the [`combine`][5] filter or the [`merge_vars`][4] action plugin.
+
+
+
 
 
 
