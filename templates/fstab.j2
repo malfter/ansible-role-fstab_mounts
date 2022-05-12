@@ -36,7 +36,7 @@ UUID={{ mount.uuid }} {{ mount.mount_point }} {{ mount.type | default('ext4') }}
 ###### Encrypted Mounts - The mount points for the decrypted drives
 {% for mount in mounts_encrypted %}
 {% if mount.fstab.comment is defined %}# {{ mount.fstab.comment }}{% endif %}
-/dev/mapper/{{ mount.label }} {{ mount.mount_point }} {{ mount.fstab.type | default('ext4') }} {{ mount.fstab.options | default('defaults,nofail') }} {{ mount.fstab.dump | default('0') }} {{ mount.fstab.pass | default('2') }}
+/dev/mapper/{{ mount.name | default(mount.uuid) }} {{ mount.mount_point }} {{ mount.fstab.type | default('ext4') }} {{ mount.fstab.options | default('defaults,nofail') }} {{ mount.fstab.dump | default('0') }} {{ mount.fstab.pass | default('2') }}
 {% endfor %}
 {% endif %}
 

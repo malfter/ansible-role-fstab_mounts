@@ -162,15 +162,14 @@ have to be "unlocked" by [`cryptsetup`][10] before it can be mounted as usual
 
 Here are the options for encrypted mounts, where the defaults are entered and
 any field which is not marked with `# Required` may be left out of your
-configuration if you are fine with the defaults.
-
-> IMPORTANT: Here the user defined `label` field needs to be unique, just like
-             the UUID.
+configuration if you are fine with the defaults. The `name` field defaults to
+the `uuid` unless something is specifically defined, but since it will be this
+device's decrypted endpoint under `/dev/mapper/` it needs to be unique.
 
 ```yaml
 mounts_encrypted:
-  - label:  # Required
-    uuid:  # Required
+  - uuid:  # Required
+    name: "{{ uuid }}"
     mount_point:  # Required
     crypttab:
       key_file:  # Required

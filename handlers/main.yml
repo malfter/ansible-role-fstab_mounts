@@ -1,7 +1,7 @@
 ---
 - name: Unlock encrypted drives
   become: true
-  shell: "cryptdisks_start {{ item.label }}"
+  shell: "cryptdisks_start {{ item.name | default(item.uuid) }}"
   with_items: "{{ mounts_encrypted }}"
   register: unlock_drives
   ignore_errors: true
