@@ -9,7 +9,9 @@
 {% if mounts_encrypted is defined %}
 ###### Encrypted drives and their decrypted mount points
 {% for mount in mounts_encrypted %}
-{% if mount.crypttab.comment is defined %}# {{ mount.crypttab.comment }}{% endif %}
+{% if mount.crypttab.comment is defined %}
+# {{ mount.crypttab.comment }}
+{% endif %}
 {{ mount.name | default(mount.uuid) }} /dev/disk/by-uuid/{{ mount.uuid }} {{ mount.crypttab.key_file }} {{ mount.crypttab.options | default('luks,nofail') }}
 {% endfor %}
 {% endif %}
