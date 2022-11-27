@@ -1,37 +1,48 @@
 ---
-- fail:
+- name: Check boot drives defined
+  ansible.builtin.fail:
     msg: "You must define all the boot drives manually"
   when: mounts_boot is not defined or mounts_boot|length == 0
 
 - name: Install 'cifs-utils' if network drives are present
-  include: install_package.yml package=cifs-utils
+  ansible.builtin.include_tasks: install_package.yml
+  vars:
+    package: cifs-utils
   when: mounts_network is defined or mounts_cryptdisks.net_path is defined
 
 - name: Install 'cryptsetup' if encrypted drives are present
-  include: install_package.yml package=cryptsetup
+  ansible.builtin.include_tasks: install_package.yml
+  vars:
+    package: cryptsetup
   when: mounts_encrypted is defined or mounts_cryptdisks is defined
 
 - name: Install 'mergerfs' if pooled drives are present
-  include: configure_mergerfs.yml
+  ansible.builtin.include_tasks: configure_mergerfs.yml
   when: mounts_pooled is defined
 
 - name: Enable a specific mount point that is necessary in order to unlock encrypted drives
-  include: cryptdisks_mount.yml
+  ansible.builtin.include_tasks: cryptdisks_mount.yml
   when: mounts_cryptdisks is defined
 
 - name: Push out the 'fstab' file
   become: true
-  template:
+  ansible.builtin.template:
     dest: "{{ mounts_fstab_path }}"
     src: fstab.j2
+    owner: root
+    group: root
+    mode: "0644"
   notify:
     - Mount drives
 
 - name: Push out the 'crypttab' file
   become: true
-  template:
+  ansible.builtin.template:
     dest: "{{ mounts_crypttab_path }}"
     src: crypttab.j2
+    owner: root
+    group: root
+    mode: "0644"
   notify:
     - Unlock encrypted drives
     - Mount drives
