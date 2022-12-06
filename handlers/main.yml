@@ -1,20 +1,10 @@
 ---
 - name: Unlock encrypted drives
   become: true
-  ansible.builtin.command: "cryptdisks_start {{ item.name | default(item.uuid) }}"
+  ansible.builtin.systemd:
+    state: started
+    name: "systemd-cryptsetup@{{ item.name | default(item.uuid) }}"
   with_items: "{{ mounts_encrypted }}"
-  register: unlock_drives
-  ignore_errors: true
-
-- name: Verify all encrypted drives could be unlocked
-  ansible.builtin.fail:
-    msg: "{{ item.stderr }}"
-  when: >
-    (item.rc != 0)
-    and not
-    ("already mapped or mounted" in item.stderr_lines|last)
-  with_items: "{{ unlock_drives.results }}"
-  listen: Unlock encrypted drives
 
 - name: Mount drives
   become: true
