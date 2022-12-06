@@ -11,8 +11,8 @@ types of `fstab` mount entries:
   - With options for loading the decryption keys from a remote host.
 - Pooled mounts (using [mergerfs][1] for pooling).
 
+## Important Note
 
-### Important Note
 This Ansible role is not really "automatic", since it is necessary to perform
 a lot of manual steps before this role can be run (like creating a filesystem
 on the drives which are to be mounted). So this is designed more as a method of
@@ -23,9 +23,38 @@ changes made to your systems.
 At the end of this README there are some guides for the manual steps that are
 necessary, so you may know what is going on at a more detailed level.
 
+## Table of Contents <!-- omit from toc -->
 
+- [ansible-role-fstab_mounts](#ansible-role-fstab_mounts)
+  - [Important Note](#important-note)
+  - [Table of Contents](#table-of-contents)
+  - [Installation](#installation)
+  - [Usage](#usage)
+  - [Boot Mounts](#boot-mounts)
+  - [Normal Mounts](#normal-mounts)
+  - [Encrypted Mounts](#encrypted-mounts)
+    - [The Cryptdisks Mount](#the-cryptdisks-mount)
+  - [Pooled Mounts](#pooled-mounts)
+    - [Example](#example)
+  - [Preparation Steps](#preparation-steps)
+  - [Create Normal Drive](#create-normal-drive)
+    - [Create Partition Table](#create-partition-table)
+    - [Create Partition](#create-partition)
+    - [Create Filesystem](#create-filesystem)
+    - [Mount filesystem](#mount-filesystem)
+  - [Create Encrypted Drive](#create-encrypted-drive)
+    - [Create a Keyfile](#create-a-keyfile)
+    - [Encrypt Device/Partition](#encrypt-devicepartition)
+    - [Unlock Encrypted Device](#unlock-encrypted-device)
+    - [Create Normal Filesystem](#create-normal-filesystem)
+    - [Mount It](#mount-it)
+  - [Additional Info](#additional-info)
+    - [Obtain the UUID](#obtain-the-uuid)
+    - [Test for Hardware Acceleration](#test-for-hardware-acceleration)
+    - [Securely Format a Drive](#securely-format-a-drive)
+    - [Ansible Variables Location](#ansible-variables-location)
 
-# Installation
+## Installation
 
 This repository does not have any dependencies by itself, so just move into
 your `roles/` folder and run the following:
@@ -51,9 +80,7 @@ main playbook like this:
     - fstab_mounts
 ```
 
-
-
-# Usage
+## Usage
 
 There are four "types" of mounts which can be managed with this role, and they
 will all have their own section that explains how to properly configure them.
@@ -80,7 +107,6 @@ section, otherwise just continue reading.
 > NOTE: Some extra information about Ansible variables may be found
         [here](#ansible-variables-location).
 
-
 ## Boot Mounts
 
 Before doing anything else to the system you are trying to apply this role to
@@ -94,7 +120,7 @@ cat /etc/fstab
 This is necessary since we need to find the entries which were there since the
 installation of the system. For me it looked like this:
 
-```
+```sh
 #   <file system>                       <mount point> <type> <options>          <dump> <pass>
 # / was on /dev/sda1 during installation
 UUID=88f0236b-620a-456e-a4a6-1b5c84996b5c  /           ext4   errors=remount-ro    0      1
@@ -107,13 +133,13 @@ entries for any other mounts:
 
 ```yaml
 mounts_boot:
-  - uuid: "88f0236b-620a-456e-a4a6-1b5c84996b5c"
+  - device: "UUID=88f0236b-620a-456e-a4a6-1b5c84996b5c"
     mount_point: "/"
     type: "ext4"
     options: "errors=remount-ro"
     dump: 0
     pass: 1
-  - uuid: "b8d210eb-d186-405f-bc42-a55cbe069a27"
+  - device: "UUID=b8d210eb-d186-405f-bc42-a55cbe069a27"
     mount_point: "none"
     type: "swap"
     options: "sw"
@@ -127,7 +153,6 @@ all the individual variables needs to be explicitly set.
 > If your `fstab` file is located somewhere else you can also define the
   `mounts_fstab_path` variable to point to the correct location. Look in the
   [`defaults/main.yml`](./defaults/main.yml) file for more "global" variables.
-
 
 ## Normal Mounts
 
@@ -150,7 +175,6 @@ mounts_normal:
 ```
 
 > Help for obtaining the UUID may be found [here](#obtain-the-uuid).
-
 
 ## Encrypted Mounts
 
@@ -184,6 +208,7 @@ mounts_encrypted:
 ```
 
 ### The Cryptdisks Mount
+
 If the `key_file`(s), in the settings above, is located on a USB key or network
 drive, which needs to be mounted **before** anything else can be mounted, you
 will have to specify the `CRYPTDISKS_MOUNT` within the `/etc/default/cryptdisks`
@@ -214,7 +239,6 @@ mounts_cryptdisks:
   dump: 0
   pass: 0
 ```
-
 
 ## Pooled Mounts
 
@@ -254,7 +278,8 @@ The `branches` variable is a list of strings that correspond to mount points
 that have been defined in either the [normal](#normal-mounts) or the
 [encrypted](#encrypted-mounts) mounts sections.
 
-#### Example:
+### Example
+
 ```yaml
 mounts_pooled:
   - name: "first_pool"
@@ -265,9 +290,7 @@ mounts_pooled:
       - "/mnt/disk3"
 ```
 
-
-
-# Preparation Steps
+## Preparation Steps
 
 In this section you will find step-by-step guides on how to prepare the raw
 drives in order for them to be usable by the different mounting options
@@ -278,6 +301,7 @@ way of doing it, which is why these steps should be considered more of general
 suggestions on how to do these things. If you want more advanced options you
 will need to do some extra research by yourself.
 
+<!-- no toc -->
 - [Create Normal Drive](#create-normal-drive)
   1. [Create Partition Table](#create-partition-table)
   2. [Create Partition](#create-partition)
@@ -289,7 +313,6 @@ will need to do some extra research by yourself.
   3. [Unlock Encrypted Device](#unlock-encrypted-device)
   4. [Create Normal Filesystem](#create-normal-filesystem)
   5. [Mount It](#mount-it-1)
-
 
 ## Create Normal Drive
 
@@ -315,6 +338,7 @@ here will be preceded by "`(parted)`" to indicate that we are still there.
   `sudo dd if=/dev/zero of=/dev/sdX bs=4M status=progress`
 
 ### Create Partition Table
+
 A drive needs a partition table before any partitions can be made. This will
 only have to be done once per drive, regardless how many partitions you intend
 to have on the drive later.
@@ -328,6 +352,7 @@ install a [Master Boot Record][6] instead of the [GUID Partition Table][7].
 ```
 
 ### Create Partition
+
 Now it is time to actually create a partition. It will be much easier if you
 already know how many partitions you want on each drive, so you don't have to
 fiddle around with this when there is important data on the drive.
@@ -367,6 +392,7 @@ You may now quit `parted`.
 ```
 
 ### Create Filesystem
+
 Now you can create a filesystem on the partition. If you are using Linux you
 most likely want to go with the `ext4` filesystem. Here we begin with a
 bog standard method of doing it for the first partition.
@@ -391,7 +417,8 @@ without this the last 5% of the drive would only be usable by "root". These
 two options should remain untouched on the OS drive, otherwise you may lock up
 the system.
 
-### Mount It
+### Mount filesystem
+
 To test if you can use the newly created filesystem you may now mount it.
 
 ```bash
@@ -400,7 +427,6 @@ sudo mount /dev/sdX1 /mnt/first-drive
 
 Try going into the desired mount point and create a file, just to be certain
 everything works as intended.
-
 
 ## Create Encrypted Drive
 
@@ -421,8 +447,8 @@ feel best suite your usecase and then continue with this guide.
 > For an enjoyable experience it is important that your system supports
   [hardware accelerated encryption](#test-for-hardware-acceleration) (AES-NI).
 
-
 ### Create a Keyfile
+
 In order to encrypt/decrypt a drive we will first need a password or a key. I
 suggest you use a key, since that is more secure, and it can be easily generated
 from the following command:
@@ -437,6 +463,7 @@ the key file. The maximum master key size for LUKS is 512 bits, but it defaults
 to [256 bits][13].
 
 ### Encrypt Device/Partition
+
 Now we can encrypt the entire block device
 
 ```bash
@@ -456,6 +483,7 @@ Both of these operations are of course destructive, so any existing data on
 the drive/partition will be lost.
 
 ### Unlock Encrypted Device
+
 You now have to unlock the encrypted device/partition in order to be able to
 use it in a way the rest of the computer can understand.
 
@@ -472,6 +500,7 @@ sort of an "UUID" of the decrypted device.
   at the [Securely Format a Drive](#securely-format-a-drive) section now.
 
 ### Create Normal Filesystem
+
 After you have unlocked the encrypted part you may take a look at the
 [Create Filesystem](#create-filesystem) section under the
 [Create Normal Drive](#create-normal-drive) chapter again, since right now the
@@ -483,6 +512,7 @@ sudo mkfs.ext4 /dev/mapper/first-drive
 ```
 
 ### Mount It
+
 To test if you can use the newly created (and encrypted) filesystem you may
 now mount it.
 
@@ -495,13 +525,13 @@ a "encrypted filesystem" to a point in `/dev/mapper/`, which then `fstab` will
 use to mount to the "correct" location later. So something like this is what is
 happening:
 
-
-```
+```sh
                            crypttab
             UUID     --------> | ----> /dev/mapper/first-drive
      (encrypted device)        |      (un-encrypted identifier)
 ```
-```
+
+```sh
                              fstab
  /dev/mapper/first-drive  ---> | --->  /mnt/first-drive
 (un-encrypted identifier)      |     (desired mount point)
@@ -510,15 +540,12 @@ happening:
 Try going into the desired mount point and create a file, just to be certain
 everything works as intended.
 
-
-
-# Additional Info
+## Additional Info
 
 This section contains additional information that may be good to know even when
 you are not in the process of creating normal/encrypted drives.
 
-
-## Obtain the UUID
+### Obtain the UUID
 
 In order to obtain the UUID ([universally unique identifier][16]) for the drives
 connected to your system you can simply use the following command, which will
@@ -530,7 +557,7 @@ sudo blkid
 
 In my case it looked something like this.
 
-```
+```sh
 /dev/sda1: UUID="88f0236b-620a-456e-a4a6-1b5c84996b5c" TYPE="ext4"
 /dev/sda5: UUID="b8d210eb-d186-405f-bc42-a55cbe069a27" TYPE="swap"
 ```
@@ -547,8 +574,8 @@ The same goes for an encrypted partition. After having completed the
 [Create Encrypted Drive](#create-encrypted-drive) guide, you should be able to
 find a UUID associated with the newly formed encrypted device.
 
+### Test for Hardware Acceleration
 
-## Test for Hardware Acceleration
 If you intend to have encrypted drives attached to your system, you should
 probably make sure that your CPU has support for hardware acceleration
 ([AES-NI][15]) and that [it is enabled][12]. To quickly check if everything is
@@ -563,8 +590,8 @@ either wrongly configured, or you don't have support for hardware acceleration.
 In that case I would strongly suggest you get a more modern CPU in order to
 get a good experience with encrypted drives.
 
+### Securely Format a Drive
 
-## Securely Format a Drive
 If you have a new drive, or are re-purposing an old un-encrypted drive, you may
 want to format it in such a way that the entire drive is filled with random
 data. This is an important step if you are trying to achieve
@@ -601,9 +628,8 @@ completely new encryption key afterwards. This is a paranoid security step
 taken so there is absolutely no connection between the "encrypted zeroes" and
 your real data.
 
+### Ansible Variables Location
 
-
-## Ansible Variables Location
 I prefer to add all the necessary variables, used by this role, in the
 `host_vars/<hostname>` file, since these variables are usually unique for each
 host. This way it is easy to separate the information on a host by host basis,
@@ -616,11 +642,6 @@ with the same name. You can therefore not have a part of them be defined in the
 behavior you may look into setting [`hash_behaviour = merge`][2], but be aware
 that this is not a very [good solution][3]. Instead you should probably look
 into the [`combine`][5] filter or the [`merge_vars`][4] action plugin.
-
-
-
-
-
 
 [1]: https://github.com/trapexit/mergerfs
 [2]: https://docs.ansible.com/ansible/latest/reference_appendices/config.html#default-hash-behaviour

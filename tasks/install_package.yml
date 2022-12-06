@@ -1,8 +1,8 @@
 ---
-- name: "Install '{{ package }}'"
+- name: "Install '{{ package }}'" # noqa name[template]
   become: true
   environment:
     DEBIAN_FRONTEND: noninteractive
-  apt:
+  ansible.builtin.apt:
     name: "{{ package }}"
     state: present
