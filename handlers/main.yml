@@ -4,6 +4,7 @@
   ansible.builtin.systemd:
     state: started
     name: "systemd-cryptsetup@{{ item.name | default(item.uuid) }}"
+    daemon_reload: true
   with_items: "{{ mounts_encrypted }}"
 
 - name: Mount drives
